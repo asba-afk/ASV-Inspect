@@ -1,0 +1,8 @@
+names:
+- bolt
+- bearing
+- oil jet
+nc: 3
+path: C:\Users\Asba\Desktop\Projects\ASV-Inspect\src\..\dataset
+train: images
+val: images

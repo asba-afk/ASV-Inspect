@@ -31,6 +31,11 @@ outputs/
 *.json
 !dataset/
 
+# Test and example files
+test_images/
+example_*.py
+api/
+
 # Dataset (keep structure, ignore data)
 dataset/images/*.jpg
 dataset/images/*.jpeg

@@ -62,9 +62,13 @@ use_count_only = st.sidebar.checkbox(
 if use_count_only:
     st.sidebar.warning("⚠️ Position checking disabled - counting only")
 else:
-    st.sidebar.success("✅ Position-based: Red circles show missing component locations")
-    st.sidebar.error("⚠️ CRITICAL: Assembly must be in SAME position/angle as training images!")
-    st.sidebar.info("💡 If red circles appear in wrong places, assembly is positioned differently than training data")
+    st.sidebar.success("✅ Position-based with Affine Transformation")
+    st.sidebar.info("🔄 System uses affine transformation - handles rotation, scale, and position!")
+    st.sidebar.write("**How it works:**")
+    st.sidebar.write("• Detects anchor components (bearings, oil jets)")
+    st.sidebar.write("• Estimates assembly rotation/scale/position")
+    st.sidebar.write("• Transforms expected positions to match")
+    st.sidebar.write("• Works at any angle/position/zoom!")
 
 if st.sidebar.button("🔄 Reload Models"):
     st.cache_resource.clear()

@@ -138,13 +138,77 @@ class AssemblyInspector:
         
         return detections
     
+    def estimate_affine_transform(self, detections: List[Dict], expected_components: List[Dict]) -> Optional[np.ndarray]:
+        """
+        Estimate affine transformation from golden model to current detections
+        Uses bearings and oil jets as anchor points (more stable than bolts)
+        
+        Args:
+            detections: Detected components
+            expected_components: Golden model components
+            
+        Returns:
+            2x3 affine transformation matrix, or None if not enough anchors
+        """
+        # Use larger components (bearings, oil jets) as anchors - they're more reliably detected
+        anchor_classes = ['bearing', 'oil jet']
+        
+        # Get anchor points from detections
+        detected_anchors = [(d['x_center'], d['y_center']) 
+                           for d in detections 
+                           if d['class_name'] in anchor_classes]
+        
+        # Get anchor points from expected
+        expected_anchors = [(e['x_center'], e['y_center']) 
+                           for e in expected_components 
+                           if e['class_name'] in anchor_classes]
+        
+        # Need at least 3 anchor points for robust affine estimation
+        if len(detected_anchors) < 3 or len(expected_anchors) < 3:
+            return None
+        
+        # Match anchors by proximity (nearest neighbor matching)
+        matched_src = []
+        matched_dst = []
+        used_indices = set()
+        
+        for exp_pt in expected_anchors:
+            best_idx = None
+            best_dist = float('inf')
+            
+            for i, det_pt in enumerate(detected_anchors):
+                if i in used_indices:
+                    continue
+                dist = euclidean_distance(exp_pt[0], exp_pt[1], det_pt[0], det_pt[1])
+                if dist < best_dist:
+                    best_dist = dist
+                    best_idx = i
+            
+            if best_idx is not None and best_dist < 0.3:  # Reasonable matching threshold
+                matched_src.append(expected_anchors[len(matched_src)])
+                matched_dst.append(detected_anchors[best_idx])
+                used_indices.add(best_idx)
+        
+        if len(matched_src) < 3:
+            return None
+        
+        # Convert to numpy arrays
+        src_pts = np.array(matched_src, dtype=np.float32)
+        dst_pts = np.array(matched_dst, dtype=np.float32)
+        
+        # Estimate affine transformation (handles rotation, scale, translation)
+        transform_matrix = cv2.estimateAffinePartial2D(src_pts, dst_pts)[0]
+        
+        return transform_matrix
+    
     def find_missing_components(
         self,
         detections: List[Dict],
         expected_components: List[Dict]
     ) -> Tuple[List[Dict], List[Dict]]:
         """
-        Match detections to expected positions and identify unmatched locations
+        Match detections to expected positions using affine transformation
+        Handles rotation, scale, and translation automatically
         
         Args:
             detections: List of detected components
@@ -153,11 +217,47 @@ class AssemblyInspector:
         Returns:
             (matched_components, missing_components)
         """
+        if not detections:
+            # All components are missing
+            missing = []
+            for exp in expected_components:
+                missing.append({
+                    'class_id': exp['class_id'],
+                    'class_name': exp['class_name'],
+                    'expected_x': exp['x_center'],
+                    'expected_y': exp['y_center'],
+                    'expected_width': exp.get('avg_width', 0.05),
+                    'expected_height': exp.get('avg_height', 0.05),
+                    'tolerance_used': self.base_tolerance
+                })
+            return [], missing
+        
+        # Estimate affine transformation from golden model to current detections
+        transform = self.estimate_affine_transform(detections, expected_components)
+        
+        # Transform expected positions to match current assembly orientation
+        if transform is not None:
+            transformed_expected = []
+            for exp in expected_components:
+                # Apply affine transformation to expected position
+                pt = np.array([[exp['x_center'], exp['y_center']]], dtype=np.float32)
+                transformed_pt = cv2.transform(pt.reshape(1, 1, 2), transform).reshape(2)
+                
+                exp_transformed = exp.copy()
+                exp_transformed['x_center_original'] = exp['x_center']
+                exp_transformed['y_center_original'] = exp['y_center']
+                exp_transformed['x_center'] = float(transformed_pt[0])
+                exp_transformed['y_center'] = float(transformed_pt[1])
+                transformed_expected.append(exp_transformed)
+        else:
+            # Fallback: use original expected positions if transform fails
+            transformed_expected = expected_components
+        
         missing_components = []
         matched_detections = set()
         
-        # Try to match each expected component to a detection
-        for expected in expected_components:
+        # Try to match each transformed expected component to a detection
+        for i, expected in enumerate(transformed_expected):
             # Calculate tolerance based on variance
             if self.use_adaptive_tolerance:
                 tolerance = calculate_adaptive_tolerance(
@@ -172,13 +272,14 @@ class AssemblyInspector:
             best_match = None
             best_distance = float('inf')
             
-            for i, det in enumerate(detections):
-                if i in matched_detections:
+            for j, det in enumerate(detections):
+                if j in matched_detections:
                     continue
                 
                 if det['class_id'] != expected['class_id']:
                     continue
                 
+                # Calculate distance using transformed positions
                 distance = euclidean_distance(
                     det['x_center'],
                     det['y_center'],
@@ -188,24 +289,25 @@ class AssemblyInspector:
                 
                 if distance < best_distance and distance <= tolerance:
                     best_distance = distance
-                    best_match = i
+                    best_match = j
             
-            # If no match, this position is missing a component
+            # If no match found, component is missing
             if best_match is None:
                 missing = {
                     'class_id': expected['class_id'],
                     'class_name': expected['class_name'],
-                    'expected_x': expected['x_center'],
+                    'expected_x': expected['x_center'],  # Use transformed position
                     'expected_y': expected['y_center'],
                     'expected_width': expected.get('avg_width', 0.05),
                     'expected_height': expected.get('avg_height', 0.05),
-                    'tolerance_used': tolerance
+                    'tolerance_used': tolerance,
+                    'transform_applied': transform is not None
                 }
                 missing_components.append(missing)
             else:
                 matched_detections.add(best_match)
         
-        # Get matched detections
+        # Get matched detections (use original detections)
         matched = [det for i, det in enumerate(detections) if i in matched_detections]
         
         return matched, missing_components

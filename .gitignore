@@ -17,9 +17,23 @@ ENV/
 *.swo
 *~
 
-# Model weights and outputs
-models/detector/train/
-*.pt
+# Model weights and outputs  
+runs/models/detector/train/*.yaml
+runs/models/detector/train/*.csv
+runs/models/detector/train/*.txt
+runs/models/detector/train/events.*
+runs/models/detector/train/confusion_matrix*
+runs/models/detector/train/F1_curve*
+runs/models/detector/train/labels*
+runs/models/detector/train/P_curve*
+runs/models/detector/train/PR_curve*
+runs/models/detector/train/R_curve*
+runs/models/detector/train/results*
+runs/models/detector/train/train_batch*
+runs/models/detector/train/val_batch*
+# Keep the trained model weights
+!runs/models/detector/train/weights/best.pt
+src/*.pt
 *.pth
 *.onnx
 *.engine

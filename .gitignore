@@ -43,6 +43,7 @@ outputs/
 *.jpg
 *.png
 *.json
+!models/golden_model/golden_model.json
 !dataset/
 
 # Test and example files

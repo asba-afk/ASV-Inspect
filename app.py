@@ -43,8 +43,8 @@ golden_model_path = st.sidebar.text_input(
 
 confidence_threshold = st.sidebar.slider(
     "Confidence Threshold",
-    0.01, 1.0, 0.05, 0.01,
-    help="Lower = detect more components (try 0.05 or lower if missing visible parts)"
+    0.01, 1.0, 0.45, 0.01,
+    help="Minimum confidence for detections (0.45 recommended based on training F1 score)"
 )
 
 position_tolerance = st.sidebar.slider(

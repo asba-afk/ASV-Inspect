@@ -36,7 +36,7 @@ class AssemblyInspector:
         detector_path: str,
         golden_model_path: str,
         base_tolerance: float = 0.50,
-        confidence_threshold: float = 0.05,
+        confidence_threshold: float = 0.45,
         use_adaptive_tolerance: bool = True
     ):
         """

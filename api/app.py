@@ -75,7 +75,7 @@ GOLDEN_MODEL_PATH = os.getenv("GOLDEN_MODEL_PATH", "../models/golden_model/golde
 UPLOAD_DIR = Path("../outputs/uploads")
 OUTPUT_DIR = Path("../outputs")
 BASE_TOLERANCE = float(os.getenv("BASE_TOLERANCE", "0.05"))
-CONFIDENCE_THRESHOLD = float(os.getenv("CONFIDENCE_THRESHOLD", "0.25"))
+CONFIDENCE_THRESHOLD = float(os.getenv("CONFIDENCE_THRESHOLD", "0.45"))
 
 # Create directories
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)

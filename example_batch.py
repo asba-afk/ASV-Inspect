@@ -137,7 +137,7 @@ def main():
             detector_path=DETECTOR_PATH,
             golden_model_path=GOLDEN_MODEL_PATH,
             base_tolerance=0.05,
-            confidence_threshold=0.25
+            confidence_threshold=0.45
         )
         print("Models loaded successfully!\n")
     except FileNotFoundError as e:

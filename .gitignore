@@ -44,20 +44,21 @@ outputs/
 *.png
 *.json
 !models/golden_model/golden_model.json
-!dataset/
 
 # Test and example files
 test_images/
-example_*.py
-api/
 
-# Dataset (keep structure, ignore data)
-dataset/images/*.jpg
-dataset/images/*.jpeg
-dataset/images/*.png
-dataset/labels/*.txt
-!dataset/labels/README.txt
-!dataset/images/README.txt
+# Dataset - Exclude all data files
+dataset/images/
+dataset/labels/
+dataset/images_incomplete/
+dataset/labels_incomplete/
+dataset/*.cache
+
+# Training runs and models
+runs/
+models/detector/
+models/golden_model/*.pt
 
 # Logs
 *.log
@@ -79,5 +80,3 @@ Thumbs.db
 *.tmp
 *.bak
 temp/
-
-/dataset

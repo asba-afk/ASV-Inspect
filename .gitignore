@@ -80,3 +80,7 @@ Thumbs.db
 *.tmp
 *.bak
 temp/
+# Documentation files (local only)
+ASV-INSPECT_COMPREHENSIVE_PRESENTATION_GUIDE.txt
+PROJECT_REPORT.txt
+ACKNOWLEDGMENT.txt
